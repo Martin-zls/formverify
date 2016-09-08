@@ -124,7 +124,7 @@
                     var myValue = trim($this.val());
                     var result = true;
 
-                    $this.val(myValue);//去掉值两端的空格
+                    //$this.val(myValue);//去掉值两端的空格
                     $this.attr('data-modefy','true');
 
                     //如果计时器存在，清空他
@@ -427,5 +427,6 @@
             return arr1;
         }
 
+        return $this;
     }
 })(jQuery);
