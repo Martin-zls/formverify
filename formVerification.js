@@ -75,9 +75,12 @@
         //提供一个外部可以导入正则表的接口
         if(parameter && parameter.hasOwnProperty("reg")){
             var globalReg = $.extend({},myReg,parameter.reg);
-            var globalRule = $.extend({},myRule,parameter.rule);
         }else{
             var globalReg = $.extend({},myReg);
+        }
+        if(parameter && parameter.hasOwnProperty("rule")){
+            var globalRule = $.extend({},myRule,parameter.rule);
+        }else{
             var globalRule = $.extend({},myRule);
         }
 
@@ -169,7 +172,7 @@
 
                                 }
                             }else{
-                                console.log("正则表不包含"+limit[i]+"的规则，请添加！");
+                                console.log("正则表和规则表不包含"+limit[i]+"的规则，请添加！");
                             }
                         }
 
@@ -183,7 +186,7 @@
                             $this.parent().addClass("nt-ntFormVER-error").removeClass("nt-ntFormVER-correct");
                         }
 
-                        if($checkForm.nt_formCheck()){
+                        if($checkForm.nt_formCheck(parameter)){
                             //验证正确后，把表单解开。
                             $checkForm.find(".nt-form-submit").removeAttr("disabled");
                         }else{
@@ -211,7 +214,7 @@
                             $this.parent().removeClass("nt-"+limit[i]+"-correct").addClass("nt-"+limit[i]+"-error");
                         }
                     }
-                    if($checkForm.nt_formCheck()){
+                    if($checkForm.nt_formCheck(parameter)){
                         //验证正确后，把表单解开。
                         $checkForm.find(".nt-form-submit").removeAttr("disabled");
                     }else{
@@ -227,7 +230,7 @@
         $checkForm.on("submit",function(){
             var formdata,result;
             //如果验证不通过就不提交
-            if(!$checkForm.nt_formCheck()){
+            if(!$checkForm.nt_formCheck(parameter)){
                 return false;
             }
 
@@ -271,11 +274,15 @@
         //提供一个外部可以导入正则表的接口
         if(parameter && parameter.hasOwnProperty("reg")){
             var globalReg = $.extend({},myReg,parameter.reg);
-            var globalRule = $.extend({},myRule,parameter.rule);
         }else{
             var globalReg = $.extend({},myReg);
+        }
+        if(parameter && parameter.hasOwnProperty("rule")){
+            var globalRule = $.extend({},myRule,parameter.rule);
+        }else{
             var globalRule = $.extend({},myRule);
         }
+
 
         //
         //检验参数checkMode是否存在，‘strict’为严格模式，严格模式不会输出notmodefy。认为有require但是没有修改的都为错误。
@@ -361,7 +368,7 @@
 
                         }
                     }else{
-                        console.log("正则表不包含"+limit[i]+"的规则，请添加！");
+                        console.log("正则表和规则表不包含"+limit[i]+"的规则，请添加！");
                     }
                 }
 
