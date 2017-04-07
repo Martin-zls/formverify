@@ -21,16 +21,19 @@
 (function($){
     //正则
     var myReg = {
-        "money": [/^([1-9]\d*|0)(\.\d{1,5})?$/,"请填写正确的金额的格式！"],
-        "interest": [/^(\-?([1-9]\d?|0)(\.\d{1,2})?)$|^(\-?10{2})$/,"请填写正确的利息的格式！"],
-        "integer": [/^[1-9]\d*$|^0$/,"请填写整数！"],
-        "chinese": [/^[\u4e00-\u9fa5a]{0,50}$/,"请填写中文！"],
-        "zuoji": [/^\d{3,4}\-\d{7,8}|1\d{10}$/,"请填写正确的座机号！"],
-        "year": [/^20(0[0-9]{1}|1[0-6]{1})$/,"请填写正确的年份格式！"],
-        "month" : [/^([1-9]{1}|1[0-2]{1})$/,"请填写正确的月份格式！"],
-        "mobile": [/^1[3|4|5|7|8]\d{9}$/,"请填写正确的手机号码！"],
+        "money": [/^([1-9]\d*|0)(\.\d{1,5})?$/,"请填写正确的金额的格式"],
+        "interest": [/^(\-?([1-9]\d?|0)(\.\d{1,2})?)$|^(\-?10{2})$/,"请填写正确的利息的格式"],
+        "integer": [/^[1-9]\d*$|^0$/,"请填写整数"],
+        "chinese": [/^[\u4e00-\u9fa5a]{0,50}$/,"请填写中文"],
+        "zuoji": [/^\d{3,4}\-\d{7,8}|1\d{10}$/,"请填写正确的座机号"],
+        "year": [/^20(0[0-9]{1}|1[0-6]{1})$/,"请填写正确的年份格式"],
+        "month" : [/^([1-9]{1}|1[0-2]{1})$/,"请填写正确的月份格式"],
+        "mobile": [/^1[3|4|5|7|8]\d{9}$/,"请填写正确的手机号码"],
+        "mobOrTel": [/(^(([0\+]\d{2,3}-)?(0\d{2,3})-)(\d{7,8})(-(\d{3,}))?$)|(^0{0,1}1[3|4|5|6|7|8|9][0-9]{9}$)/,"请填写正确的手机号码"],
         "personId": [/^(\d{15}$|^\d{18}$|^\d{17}(\d|X|x))$/,"请填写正确的身份证号码！"],
-        "require": [/\S/,"不能为空！"]
+        "require": [/\S/,"不能为空！"],
+        "businessLicense": [/^[a-zA-Z0-9]{15,18}$/,"营业执照格式不正确"],
+        "organizationCode": [/[a-zA-Z0-9]{8}-[a-zA-Z0-9]{1}/,"组织机构代码证格式不正确"]
     };
 
     var myRule = {
@@ -49,14 +52,14 @@
             }
         },"股份不能大于100！"],
         positiveNum: [function(value){
-            if(value>=0){
+            if(value>=0 && value < 100000000000 && value.indexOf('-') < 0){
                 return true
             }else{
                 return false;
             }
         },'必须填入正整数！'],
         nonull: [function(value){
-            if(value != "" && value != null && value != '-'){
+            if( value != "" && value != null && value != '-' ){
                 return true;
             }else{
                 return false;
@@ -109,7 +112,7 @@
                 }
             }
             return json;
-        };
+        }
 
         //选择表单中需要验证的元素
         var $checkObj = $checkForm.find('[data-rule]');
@@ -227,9 +230,11 @@
 
         //表单提交时执行
         $checkForm.off("submit");
-        $checkForm.on("submit",function(){
+        $checkForm.on("submit",function(e){
+            e.preventDefault();
             var formdata,result;
             //如果验证不通过就不提交
+            parameter.checkMode = 'strict';
             if(!$checkForm.nt_formCheck(parameter)){
                 return false;
             }
@@ -262,9 +267,12 @@
         if(parameter){
             parameter.ready && parameter.ready();
         }
-        $checkForm.nt_formCheck(parameter);
-        return $checkForm;
 
+        parameter.checkMode = 'loose';
+        $checkForm.nt_formCheck(parameter);
+        parameter.checkMode = 'strict';
+
+        return $checkForm;
     };
 
     //表单验证
@@ -322,14 +330,18 @@
             var isModefy = $this.attr('data-modefy');
 
 
-            if(limit.indexOf('require') < 0 && checkObjVal == ""){
+            if(checkObjVal == "" && limit.indexOf('require') < 0){
+                //如果控件内容为空，而且控件没有必填的条件，不验证直接通过。
                 $this.addClass("nt-ntFormVER-correct").removeClass("nt-ntFormVER-error");
                 $this.parent().addClass("nt-ntFormVER-correct").removeClass("nt-ntFormVER-error");
                 $this.parent().find(".ntverifybox").remove();
             }else if(limit.indexOf('require') >= 0 || (limit.indexOf('require') < 0 && checkObjVal != "")){
-
+                //控件为必填或者控件有内容，要对内容进行验证
                 if(limit.indexOf('require') >= 0 && checkObjVal == "" && parameter.checkMode != 'strict'){
+                    //控件必填，控件为空，检查模式为严格
+
                     if(isModefy == undefined && !$this.hasClass("nt-ntFormVER-error")){
+                        //控件还没有编辑过，而且没有错误。
                         $this.addClass("nt-ntFormVER-notmodefy");
                         $this.parent().addClass("nt-ntFormVER-notmodefy");
                         $this.parent().find(".ntverifybox").remove();
@@ -350,7 +362,8 @@
                             $this.parent().removeClass("nt-"+limit[i]+"-correct").addClass("nt-"+limit[i]+"-error");
                             result = false;
 
-                            if(!(parameter && parameter.hasOwnProperty("showtip") && parameter.showtip === false)){
+                            if(!(parameter && parameter.hasOwnProperty("showtip") && parameter.showtip === false) && parameter.checkMode == 'strict' && isModefy){
+                                //判断showtip存在，而且不等于false;
                                 showtip($this,globalReg[limit[i]][1]);
                             }
 
@@ -362,7 +375,7 @@
                             $this.parent().removeClass("nt-"+limit[i]+"-correct").addClass("nt-"+limit[i]+"-error");
                             result = false;
 
-                            if(!(parameter && parameter.hasOwnProperty("showtip") && parameter.showtip === false)){
+                            if(!(parameter && parameter.hasOwnProperty("showtip") && parameter.showtip === false) && parameter.checkMode == 'strict' && isModefy){
                                 showtip($this,globalRule[limit[i]][1]);
                             }
 
@@ -411,6 +424,7 @@
         $checkbox.each(function(index){
             var rule = $(this).data("rule").split(" ");
             ruleArr = mergeArray(ruleArr,rule);
+            this.removeAttribute('data-modefy');
         });
 
         for(var i= 0,len=ruleArr.length;i<len;i++){
