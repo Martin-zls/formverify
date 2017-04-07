@@ -24,40 +24,46 @@
         "money": [/^([1-9]\d*|0)(\.\d{1,5})?$/,"请填写正确的金额的格式"],
         "interest": [/^(\-?([1-9]\d?|0)(\.\d{1,2})?)$|^(\-?10{2})$/,"请填写正确的利息的格式"],
         "integer": [/^[1-9]\d*$|^0$/,"请填写整数"],
-        "chinese": [/^[\u4e00-\u9fa5a]{0,50}$/,"请填写中文"],
+        "chinese": [/^[\u4e00-\u9fa5]{0,50}$/,"请填写中文"],
         "zuoji": [/^\d{3,4}\-\d{7,8}|1\d{10}$/,"请填写正确的座机号"],
         "year": [/^20(0[0-9]{1}|1[0-6]{1})$/,"请填写正确的年份格式"],
         "month" : [/^([1-9]{1}|1[0-2]{1})$/,"请填写正确的月份格式"],
         "mobile": [/^1[3|4|5|7|8]\d{9}$/,"请填写正确的手机号码"],
         "mobOrTel": [/(^(([0\+]\d{2,3}-)?(0\d{2,3})-)(\d{7,8})(-(\d{3,}))?$)|(^0{0,1}1[3|4|5|6|7|8|9][0-9]{9}$)/,"请填写正确的手机号码"],
-        "personId": [/^(\d{15}$|^\d{18}$|^\d{17}(\d|X|x))$/,"请填写正确的身份证号码！"],
-        "require": [/\S/,"不能为空！"],
+        "personId": [/^(\d{15}$|^\d{18}$|^\d{17}(\d|X|x))$/,"请填写正确的身份证号码"],
         "businessLicense": [/^[a-zA-Z0-9]{15,18}$/,"营业执照格式不正确"],
         "organizationCode": [/[a-zA-Z0-9]{8}-[a-zA-Z0-9]{1}/,"组织机构代码证格式不正确"]
     };
 
     var myRule = {
+        require : [function(value){
+            if(value === ''){
+                return false;
+            }else{
+                return true;
+            }
+        },"不能为空"],
         number : [function(value){
             if(isNaN(value)){
                 return false;
             }else{
                 return true;
             }
-        },"请填写数字！"],
+        },"请填写数字"],
         stock : [function(value){
             if(value>0 && value <=100){
                 return true
             }else{
                 return false;
             }
-        },"股份不能大于100！"],
+        },"股份不能大于100"],
         positiveNum: [function(value){
             if(value>=0 && value < 100000000000 && value.indexOf('-') < 0){
                 return true
             }else{
                 return false;
             }
-        },'必须填入正整数！'],
+        },'必须填入正整数'],
         nonull: [function(value){
             if( value != "" && value != null && value != '-' ){
                 return true;
@@ -121,11 +127,11 @@
 
         //改变的时候进行验证
         $checkObj.each(function(index,elem){
-            var limit = $(elem).data('rule').split(" ");
 
             //绑定input控件的检查时间，keyup间隔大于600毫秒认为是修改完毕。
             if($(elem).is("input") || $(elem).is("textarea")){
                 $(elem).on("keyup",function(){
+                    var limit = $(elem).data('rule').split(" ");
                     var $this = $(this);
                     var myValue = trim($this.val());
                     var result = true;
@@ -149,33 +155,35 @@
                     time[index] = setTimeout(function(){
 
                         for(var i= 0,len=limit.length;i<len;i++){
-                            //如果有正则表有这个属性才进行验证！
-                            if(globalReg && globalReg.hasOwnProperty(limit[i])){
-                                if(globalReg[limit[i]][0].test(myValue)){
-                                    $this.parent().addClass("nt-"+limit[i]+"-correct").removeClass("nt-"+limit[i]+"-error");
-                                }else{
-                                    $this.parent().removeClass("nt-"+limit[i]+"-correct").addClass("nt-"+limit[i]+"-error");
-                                    result = false;
+                            if(limit[i] !== ''){
+                                //如果有正则表有这个属性才进行验证！
+                                if(globalReg && globalReg.hasOwnProperty(limit[i])){
+                                    if(globalReg[limit[i]][0].test(myValue)){
+                                        $this.parent().addClass("nt-"+limit[i]+"-correct").removeClass("nt-"+limit[i]+"-error");
+                                    }else{
+                                        $this.parent().removeClass("nt-"+limit[i]+"-correct").addClass("nt-"+limit[i]+"-error");
+                                        result = false;
 
-                                    if(!(parameter && parameter.hasOwnProperty("showtip") && parameter.showtip === false)){
-                                        showtip($this,globalReg[limit[i]][1]);
+                                        if(!(parameter && parameter.hasOwnProperty("showtip") && parameter.showtip === false)){
+                                            showtip($this,globalReg[limit[i]][1]);
+                                        }
+
                                     }
+                                }else if(globalRule && globalRule.hasOwnProperty(limit[i])){
+                                    if(globalRule[limit[i]][0](myValue)){
+                                        $this.parent().addClass("nt-"+limit[i]+"-correct").removeClass("nt-"+limit[i]+"-error");
+                                    }else{
+                                        $this.parent().removeClass("nt-"+limit[i]+"-correct").addClass("nt-"+limit[i]+"-error");
+                                        result = false;
 
-                                }
-                            }else if(globalRule && globalRule.hasOwnProperty(limit[i])){
-                                if(globalRule[limit[i]][0](myValue)){
-                                    $this.parent().addClass("nt-"+limit[i]+"-correct").removeClass("nt-"+limit[i]+"-error");
-                                }else{
-                                    $this.parent().removeClass("nt-"+limit[i]+"-correct").addClass("nt-"+limit[i]+"-error");
-                                    result = false;
+                                        if(!(parameter && parameter.hasOwnProperty("showtip") && parameter.showtip === false)){
+                                            showtip($this,globalRule[limit[i]][1]);
+                                        }
 
-                                    if(!(parameter && parameter.hasOwnProperty("showtip") && parameter.showtip === false)){
-                                        showtip($this,globalRule[limit[i]][1]);
                                     }
-
+                                }else{
+                                    console.log("正则表和规则表不包含"+limit[i]+"的规则，请添加！");
                                 }
-                            }else{
-                                console.log("正则表和规则表不包含"+limit[i]+"的规则，请添加！");
                             }
                         }
 
@@ -203,6 +211,7 @@
             //绑定选择框的检查事件
             if($(elem).is("select")){
                 $(elem).change(function(){
+                    var limit = $(elem).data('rule').split(" ");
                     var $this = $(this);
                     var value = $this.val();
                     var firstvalue = $this.find("option").eq(0).val();
@@ -217,7 +226,10 @@
                             $this.parent().removeClass("nt-"+limit[i]+"-correct").addClass("nt-"+limit[i]+"-error");
                         }
                     }
-                    if($checkForm.nt_formCheck(parameter)){
+                    parameter.checkMode = 'loose';
+                    var isAllRight = $checkForm.nt_formCheck(parameter);
+                    parameter.checkMode = 'strict';
+                    if(isAllRight){
                         //验证正确后，把表单解开。
                         $checkForm.find(".nt-form-submit").removeAttr("disabled");
                     }else{
@@ -255,8 +267,9 @@
         $checkObj.each(function(){
             var limit = $(this).data('rule').split(" ");
             for(var i= 0,len=limit.length;i<len;i++){
-                if(globalReg && !globalReg.hasOwnProperty(limit[i])){
-                    if(globalRule && !globalRule.hasOwnProperty(limit[i])){
+
+                if(limit[i] !== '' && globalReg && !globalReg.hasOwnProperty(limit[i])){
+                    if(limit[i] !== '' && globalRule && !globalRule.hasOwnProperty(limit[i])){
                         alert("正则表不包含"+limit[i]+"的规则，请添加！");
                     }
                 }
@@ -354,34 +367,35 @@
                 //
                 // 把data-rule里的限制条件一个个的检查，检验不通过的，把result改为false；如果配置里面showtip等于false，则不在页面显示提示
                 for(var i= 0,len=limit.length;i<len;i++){
+                    if(limit[i] !== ''){
+                        if(globalReg && globalReg.hasOwnProperty(limit[i])){//判断正则对象中是否有该限制条件
+                            if(globalReg[limit[i]][0].test(checkObjVal)){
+                                $this.parent().addClass("nt-"+limit[i]+"-correct").removeClass("nt-"+limit[i]+"-error");
+                            }else{
+                                $this.parent().removeClass("nt-"+limit[i]+"-correct").addClass("nt-"+limit[i]+"-error");
+                                result = false;
 
-                    if(globalReg && globalReg.hasOwnProperty(limit[i])){//判断正则对象中是否有该限制条件
-                        if(globalReg[limit[i]][0].test(checkObjVal)){
-                            $this.parent().addClass("nt-"+limit[i]+"-correct").removeClass("nt-"+limit[i]+"-error");
-                        }else{
-                            $this.parent().removeClass("nt-"+limit[i]+"-correct").addClass("nt-"+limit[i]+"-error");
-                            result = false;
+                                if(!(parameter && parameter.hasOwnProperty("showtip") && parameter.showtip === false) && parameter.checkMode == 'strict' && isModefy){
+                                    //判断showtip存在，而且不等于false;
+                                    showtip($this,globalReg[limit[i]][1]);
+                                }
 
-                            if(!(parameter && parameter.hasOwnProperty("showtip") && parameter.showtip === false) && parameter.checkMode == 'strict' && isModefy){
-                                //判断showtip存在，而且不等于false;
-                                showtip($this,globalReg[limit[i]][1]);
                             }
+                        }else if(globalRule && globalRule.hasOwnProperty(limit[i])){//判断规则对象中是否有该限制条件
+                            if(globalRule[limit[i]][0](checkObjVal)){
+                                $this.parent().addClass("nt-"+limit[i]+"-correct").removeClass("nt-"+limit[i]+"-error");
+                            }else{
+                                $this.parent().removeClass("nt-"+limit[i]+"-correct").addClass("nt-"+limit[i]+"-error");
+                                result = false;
 
-                        }
-                    }else if(globalRule && globalRule.hasOwnProperty(limit[i])){//判断规则对象中是否有该限制条件
-                        if(globalRule[limit[i]][0](checkObjVal)){
-                            $this.parent().addClass("nt-"+limit[i]+"-correct").removeClass("nt-"+limit[i]+"-error");
-                        }else{
-                            $this.parent().removeClass("nt-"+limit[i]+"-correct").addClass("nt-"+limit[i]+"-error");
-                            result = false;
+                                if(!(parameter && parameter.hasOwnProperty("showtip") && parameter.showtip === false) && parameter.checkMode == 'strict' && isModefy){
+                                    showtip($this,globalRule[limit[i]][1]);
+                                }
 
-                            if(!(parameter && parameter.hasOwnProperty("showtip") && parameter.showtip === false) && parameter.checkMode == 'strict' && isModefy){
-                                showtip($this,globalRule[limit[i]][1]);
                             }
-
+                        }else{
+                            console.log("正则表和规则表不包含"+limit[i]+"的规则，请添加！");
                         }
-                    }else{
-                        console.log("正则表和规则表不包含"+limit[i]+"的规则，请添加！");
                     }
                 }
 
