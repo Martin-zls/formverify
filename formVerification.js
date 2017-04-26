@@ -15,6 +15,9 @@
  *      },
  *      ready: function(){
  *          alert("表单验证加载完成了，你可以做点什么！")
+ *      },
+ *      opendx: function(){
+ *          alert("手机号和验证码验证后的回调（开启获取短信验证码按钮）")
  *      }
  *  });
  */
@@ -130,11 +133,14 @@
 
             //绑定input控件的检查时间，keyup间隔大于600毫秒认为是修改完毕。
             if($(elem).is("input") || $(elem).is("textarea")){
-                $(elem).on("keyup",function(){
+                $(elem).on("keyup",function(e){
                     var limit = $(elem).data('rule').split(" ");
                     var $this = $(this);
                     var myValue = trim($this.val());
-                    var result = true;
+                    var result = true,
+                        waitTime = 600;
+
+                    e.keyCode === 13?waitTime=0:waitTime = 600;
 
                     //$this.val(myValue);//去掉值两端的空格
                     $this.attr('data-modefy','true');
@@ -197,6 +203,11 @@
                             $this.parent().addClass("nt-ntFormVER-error").removeClass("nt-ntFormVER-correct");
                         }
 
+                        //手机号和验证码验证后的回调（开启获取短信验证码按钮）
+                        if(parameter){
+                            parameter.opendx && parameter.opendx();
+                        }
+
                         if($checkForm.nt_formCheck(parameter)){
                             //验证正确后，把表单解开。
                             $checkForm.find(".nt-form-submit").removeAttr("disabled");
@@ -204,7 +215,12 @@
                             $checkForm.find(".nt-form-submit").attr("disabled","disabled");
                         }
 
-                    },600);
+                        if(waitTime===0){
+                            $checkForm.submit();
+                        }
+
+
+                    },waitTime);
                 });
             }
 
@@ -281,9 +297,20 @@
             parameter.ready && parameter.ready();
         }
 
-        parameter.checkMode = 'loose';
-        $checkForm.nt_formCheck(parameter);
-        parameter.checkMode = 'strict';
+
+        (function(){
+            // parameter.checkMode = 'loose';
+            var isAllRight = $checkForm.nt_formCheck(parameter);
+            // parameter.checkMode = 'strict';
+            if(isAllRight || parameter.submitBtn === 'open'){
+                //验证正确后，把表单解开。
+                $checkForm.find(".nt-form-submit").removeAttr("disabled");
+            }else{
+                $checkForm.find(".nt-form-submit").attr("disabled","disabled");
+            }
+
+        }());
+
 
         return $checkForm;
     };
@@ -421,7 +448,7 @@
         });
 
         return totalResult>0?false:true;
-    }
+    };
 
     //表单的重置
     $.fn.nt_formReset = function(){
